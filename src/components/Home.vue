@@ -1,6 +1,7 @@
 <script>
 import { api } from '@/api/config';
 import Card from './Card.vue';
+import ReservationCard from './ReservationCard.vue';
 import UsersList from './UsersList.vue';
 import { showError,showSuccess } from '@/utils';
 export default{
@@ -10,7 +11,9 @@ export default{
             isVisibleDialog: false,
             isVisibleHotels: true,
             isVisibleUsers: false,
+            isVisibleReservations: false,
             hotels: [],
+            reservations: [],
             isAdmin: localStorage.getItem("role") === "admin",
             hotel: {
                 name: "",
@@ -20,7 +23,8 @@ export default{
     },
     components: {
         Card,
-        UsersList
+        UsersList,
+        ReservationCard
     },
     methods: {
         toggleMenu: function(){
@@ -37,7 +41,8 @@ export default{
                         Authorization: `Bearer ${token}`
                     }
                 });
-                this.hotels = response.data;        
+                this.hotels = response.data;    
+                localStorage.setItem("hotels", JSON.stringify(response.data));    
             } catch (error) {
                 console.log(error);     
                 showError(error.response.data.message);           
@@ -73,12 +78,33 @@ export default{
         setChildsVisibility: function(childName){
             if(childName === "users"){
                 this.isVisibleHotels = false;
+                this.isVisibleReservations = false;
                 this.isVisibleUsers = true;
+            }else if(childName === "reservations"){
+                this.getReservations();
+                this.isVisibleUsers = false;
+                this.isVisibleReservations = true;
+                this.isVisibleHotels = false;
             }else{
                 this.isVisibleUsers = false;
+                this.isVisibleReservations = false;
                 this.isVisibleHotels = true;
             }
         },
+        getReservations: async function() {
+            try {
+                const token = localStorage.getItem("token");
+                const response = await api.get('/api/reservations', {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                });
+                this.reservations = response.data; 
+            } catch (error) {
+                console.log(error);     
+                showError(error.response.data.message);           
+            }
+        }
     },
     mounted: function(){
         this.getHotels();
@@ -100,7 +126,7 @@ export default{
                     <button class="bg-black hover:bg-gray text-white" @click="setIsVisibleDialog">Crear hotel</button>
                 </li>
                 <li class="nav-item" v-if="!isAdmin">
-                    <button class="bg-black hover:bg-gray text-white" @click="">Lista de reservas</button>
+                    <button class="bg-black hover:bg-gray text-white" @click="setChildsVisibility('reservations')">Lista de reservas</button>
                 </li>
                 <li class="nav-item">
                     <button class=" absolute right-10 bg-black hover:bg-black text-white py-2 px-4" @click="toggleMenu">
@@ -108,7 +134,6 @@ export default{
                     </button>
                     <div v-if="isMenuVisible" class="absolute right-10 top-14 mt-2 w-48 bg-white rounded-md shadow-lg">
                         <ul>
-                            <li class="px-4 py-2 hover:bg-gray-200 cursor-pointer" @click="navigateToProfile">Perfil</li>
                             <li class="px-4 py-2 hover:bg-gray-200 cursor-pointer" @click="logout">Cerrar sesión</li>
                         </ul>
                     </div>
@@ -117,7 +142,7 @@ export default{
         </div>
     </header>
     <div v-if="isVisibleHotels" class="mt-20 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card v-for="hotel in hotels" :key="hotel.id" :name="hotel.name" :location="hotel.location" :id="hotel.id" @updateHotel="getHotels"/>
+        <Card v-for="hotel in hotels" :key="hotel.id" :name="hotel.name" :location="hotel.location" :id="hotel.id" :isReservationData="False" @updateHotel="getHotels"/>
     </div>
     <div v-if="isVisibleDialog" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center" >
         <div class="bg-white p-8 rounded-lg w-1/3">
@@ -132,6 +157,9 @@ export default{
     </div>
     <div v-if="isVisibleUsers">
         <UsersList />
+    </div>
+    <div v-if="isVisibleReservations" class="mt-20 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <ReservationCard v-for="reservation in reservations" :hotel_id="reservation.reservation.hotel_id" :id="reservation.reservation.id" :hotel_name="reservation.hotel_name" :hotel_location="reservation.hotel_location" :check_in_date="reservation.reservation.chek_in_date" :check_out_date="reservation.reservation.check_out_date" @updateReservations="getReservations"/>
     </div>
 </template>
 
