@@ -1,85 +1,62 @@
-<script setup>
-import { RouterLink, RouterView } from 'vue-router'
-import HelloWorld from './components/HelloWorld.vue'
+<script>
+import router from './router';
+
+export default{
+  name: 'App',
+  data: function() {
+    return{
+      isAuth: false,
+    }
+  },
+  methods: {
+    verifyAuth: function(){
+        this.isAuth = localStorage.getItem("isAuth") || false;
+        console.log(this.isAuth);
+        if(this.isAuth === false){
+            console.log("No esta autenticado");
+            this.$router.push({name: "login"});
+        }else{
+          console.log("Esta autenticado");
+          this.$router.push({name: "home"});
+        }
+    },
+    loginCompleted: function(data){
+      console.log('evento loginCompleted');
+      localStorage.setItem("isAuth", true);
+      localStorage.setItem("userId", data.user.id);
+      localStorage.setItem("email", data.user.email);
+      localStorage.setItem("password", data.user.password);
+      localStorage.setItem("role", data.user.role);
+      localStorage.setItem("token", data.token);
+      this.verifyAuth();
+    },
+    navigateToListUsers: function(){
+      this.$router.push({name: "users"});
+    },
+    logout: function(){
+      localStorage.clear();
+      this.$router.push({name: "login"});
+    }
+  }
+}
 </script>
 
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="125" height="125" />
-
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
-
-      <nav>
-        <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/about">About</RouterLink>
-      </nav>
-    </div>
-  </header>
-
-  <RouterView />
+  <div>
+    <router-view 
+    v-on:loginCompleted="loginCompleted"
+    v-on:logout="logout"
+    ></router-view>
+  </div>
 </template>
 
-<style scoped>
-header {
-  line-height: 1.5;
-  max-height: 100vh;
-}
-
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
-
-nav {
-  width: 100%;
-  font-size: 12px;
-  text-align: center;
-  margin-top: 2rem;
-}
-
-nav a.router-link-exact-active {
-  color: var(--color-text);
-}
-
-nav a.router-link-exact-active:hover {
-  background-color: transparent;
-}
-
-nav a {
-  display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-border);
-}
-
-nav a:first-of-type {
-  border: 0;
-}
-
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
-
-  nav {
-    text-align: left;
-    margin-left: -1rem;
-    font-size: 1rem;
-
-    padding: 1rem 0;
-    margin-top: 1rem;
-  }
+<style>
+.div {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
 }
 </style>
